@@ -1,5 +1,10 @@
 declare const module: { hot: { accept: () => void } }
 
+declare module '*.svg' {
+  const src: string
+  export default src
+}
+
 interface IconProps {
   color?: string
   className?: string

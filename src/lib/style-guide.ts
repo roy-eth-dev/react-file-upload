@@ -8,6 +8,7 @@ export enum Colors {
   // Primary
   AccordBlue = '#1b76de',
   Border = '#d1e3f8',
+  DarkBlue = '#4991e5',
 
   // Standard
   PureWhite = '#ffffff',
