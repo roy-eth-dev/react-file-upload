@@ -3,7 +3,6 @@ import styled from 'styled-components'
 import axios from 'axios'
 import { Colors } from '../../lib/style-guide'
 import ProgressPreviewRing from './ProgressImageRing'
-import defaultImage from './default-image.svg'
 import useDropzone from './useDropzone'
 import service from '../../service'
 
@@ -164,7 +163,7 @@ const ImageDropZone: FC<ImageDropZone> = ({ className, onChange, value }) => {
         value={progressValue}
         stroke={1}
         color={Colors.DarkBlue}
-        image={curStatus === 'UPLOADED' ? value || imageUrl : defaultImage}
+        image={curStatus === 'UPLOADED' ? value || imageUrl : ''}
       />
       <DragText>{(Status as any)[curStatus].DragText}</DragText>
       <OrText>- or -</OrText>
@@ -177,6 +176,7 @@ const ImageDropZone: FC<ImageDropZone> = ({ className, onChange, value }) => {
         style={{ display: 'none' }}
         ref={inputFile}
         onChange={handleFileChange}
+        accept={ACCEPTED_FILES}
       />
     </Dropzone>
   )
