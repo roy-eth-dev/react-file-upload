@@ -14,17 +14,10 @@ export const uploadFile = (
   cancelToken: CancelToken | undefined
 ) => {
   const headers = new Headers()
-  headers.append('Origin', location.origin)
-  const proxyurl = 'https://cors-anywhere.herokuapp.com/'
-  // fetch(proxyurl + signedPutUrl, {
-  //   body: file,
-  //   method: 'PUT',
-  //   headers: headers
-  // })
 
   return axios.request({
     method: 'PUT',
-    url: proxyurl + signedPutUrl,
+    url: signedPutUrl,
     data: file,
     headers: headers,
     onUploadProgress: onProgress,

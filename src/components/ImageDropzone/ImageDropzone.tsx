@@ -80,12 +80,12 @@ const Dropzone = styled.div<Dropzone>`
   text-align: center;
 `
 
-const ImageDropZone: FC<ImageDropZone> = ({ className }) => {
+const ImageDropZone: FC<ImageDropZone> = ({ className, onChange, value }) => {
   const [errorMessage, setErrorMessage] = useState('')
   const inputFile = useRef<HTMLInputElement>(document.createElement('input'))
   const [progressValue, setProgressValue] = useState(0)
-  const [imageUrl, setImageUrl] = useState('')
-  const [curStatus, setCurStatus] = useState('INITIAL')
+  const [imageUrl, setImageUrl] = useState(value || '')
+  const [curStatus, setCurStatus] = useState(value ? 'UPLOADED' : 'INITIAL')
   const [signal, setSignal] = useState(axios.CancelToken.source())
 
   const validateFile = (files: FileList) => {
@@ -108,17 +108,18 @@ const ImageDropZone: FC<ImageDropZone> = ({ className }) => {
 
   const onFileChoose = useCallback(
     (files) => {
-      console.log('jey')
       setProgressValue(0)
       if (validateFile(files)) {
         setCurStatus('UPLOADING')
         service.cloudStorage
           .uploadFile(files[0], onProgress, signal.token)
           .then(() => {
-            setImageUrl(service.cloudStorage.getFile())
+            const url = service.cloudStorage.getFile()
+            setImageUrl(url)
             setCurStatus('UPLOADED')
             setProgressValue(0)
             setSignal(axios.CancelToken.source())
+            onChange && onChange(url)
           })
           .catch(() => {
             setCurStatus('INITIAL')
@@ -127,7 +128,7 @@ const ImageDropZone: FC<ImageDropZone> = ({ className }) => {
           })
       }
     },
-    [signal.token]
+    [onChange, signal.token]
   )
 
   const handleDrop = useCallback(
@@ -163,7 +164,7 @@ const ImageDropZone: FC<ImageDropZone> = ({ className }) => {
         value={progressValue}
         stroke={1}
         color={Colors.DarkBlue}
-        image={curStatus === 'UPLOADED' ? imageUrl : defaultImage}
+        image={curStatus === 'UPLOADED' ? value || imageUrl : defaultImage}
       />
       <DragText>{(Status as any)[curStatus].DragText}</DragText>
       <OrText>- or -</OrText>
