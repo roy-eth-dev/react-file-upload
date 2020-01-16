@@ -1,18 +1,35 @@
 import React, { useCallback, useState, useRef, FormEvent } from 'react'
 import styled from 'styled-components'
+import axios from 'axios'
 import { Colors } from '../../lib/style-guide'
 import ProgressPreviewRing from './ProgressImageRing'
 import defaultImage from './default-image.svg'
 import useDropzone from './useDropzone'
+import service from '../../service'
 
 const ACCEPTED_FILES = 'image/png,image/jpeg'
-const MAX_SIZE = 100000
+const MAX_SIZE = 1000000
 
 const ERROR_MESSAGE = {
   NO_ERROR: '',
   NOT_SINGLE: 'Select a single file',
   INVALID_FORMAT: 'Select an image file',
   SIZE_TOO_BIG: 'File is too big'
+}
+
+const Status = {
+  INITIAL: {
+    DragText: 'Drag & drop here',
+    SelectFile: 'Select file to upload'
+  },
+  UPLOADING: {
+    DragText: 'Uploading',
+    SelectFile: 'Cancel'
+  },
+  UPLOADED: {
+    DragText: 'Drag & drop here to replace',
+    SelectFile: 'Select file to replace'
+  }
 }
 
 type ImageDropZone = {
@@ -66,6 +83,10 @@ const Dropzone = styled.div<Dropzone>`
 const ImageDropZone: FC<ImageDropZone> = ({ className }) => {
   const [errorMessage, setErrorMessage] = useState('')
   const inputFile = useRef<HTMLInputElement>(document.createElement('input'))
+  const [progressValue, setProgressValue] = useState(0)
+  const [imageUrl, setImageUrl] = useState('')
+  const [curStatus, setCurStatus] = useState('INITIAL')
+  const [signal, setSignal] = useState(axios.CancelToken.source())
 
   const validateFile = (files: FileList) => {
     if (!files || files.length !== 1 || !files[0]) {
@@ -80,9 +101,34 @@ const ImageDropZone: FC<ImageDropZone> = ({ className }) => {
     return false
   }
 
-  const onFileChoose = useCallback((files) => {
-    validateFile(files)
-  }, [])
+  const onProgress = (progress: ProgressEvent) => {
+    setProgressValue((100 * progress.loaded) / progress.total)
+    console.log(progress)
+  }
+
+  const onFileChoose = useCallback(
+    (files) => {
+      console.log('jey')
+      setProgressValue(0)
+      if (validateFile(files)) {
+        setCurStatus('UPLOADING')
+        service.cloudStorage
+          .uploadFile(files[0], onProgress, signal.token)
+          .then(() => {
+            setImageUrl(service.cloudStorage.getFile())
+            setCurStatus('UPLOADED')
+            setProgressValue(0)
+            setSignal(axios.CancelToken.source())
+          })
+          .catch(() => {
+            setCurStatus('INITIAL')
+            setProgressValue(0)
+            setSignal(axios.CancelToken.source())
+          })
+      }
+    },
+    [signal.token]
+  )
 
   const handleDrop = useCallback(
     (files) => {
@@ -95,8 +141,13 @@ const ImageDropZone: FC<ImageDropZone> = ({ className }) => {
     onDrop: handleDrop
   })
 
-  const handleOpen = () => {
-    inputFile.current.click()
+  const handleOpenOrCancel = () => {
+    if (curStatus === 'UPLOADING') {
+      signal.cancel('Cancelled by user')
+      inputFile.current.value = ''
+    } else {
+      inputFile.current.click()
+    }
   }
 
   const handleFileChange = (event: FormEvent<HTMLInputElement>) => {
@@ -104,19 +155,21 @@ const ImageDropZone: FC<ImageDropZone> = ({ className }) => {
     onFileChoose(files)
   }
 
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   return (
     <Dropzone {...dropzoneProps} className={className} isDragging={isDragging}>
       <ProgressPreviewRing
         size={80}
-        value={0}
+        value={progressValue}
         stroke={1}
         color={Colors.DarkBlue}
-      >
-        <img src={defaultImage} />
-      </ProgressPreviewRing>
-      <DragText>Drag & drop here</DragText>
+        image={curStatus === 'UPLOADED' ? imageUrl : defaultImage}
+      />
+      <DragText>{(Status as any)[curStatus].DragText}</DragText>
       <OrText>- or -</OrText>
-      <SelectFile onClick={handleOpen}>Select file to upload</SelectFile>
+      <SelectFile onClick={handleOpenOrCancel}>
+        {(Status as any)[curStatus].SelectFile}
+      </SelectFile>
       <ErrorText>{errorMessage}</ErrorText>
       <input
         type="file"
