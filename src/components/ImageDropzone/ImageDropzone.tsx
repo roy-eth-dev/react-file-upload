@@ -84,7 +84,9 @@ const ImageDropZone: FC<ImageDropZone> = ({ className, onChange, value }) => {
   const inputFile = useRef<HTMLInputElement>(document.createElement('input'))
   const [progressValue, setProgressValue] = useState(0)
   const [imageUrl, setImageUrl] = useState(value || '')
-  const [curStatus, setCurStatus] = useState(value ? 'UPLOADED' : 'INITIAL')
+  const [curStatus, setCurStatus] = useState<keyof typeof Status>(
+    value ? 'UPLOADED' : 'INITIAL'
+  )
   const [signal, setSignal] = useState(axios.CancelToken.source())
 
   const validateFile = (files: FileList) => {
@@ -155,7 +157,6 @@ const ImageDropZone: FC<ImageDropZone> = ({ className, onChange, value }) => {
     onFileChoose(files)
   }
 
-  /* eslint-disable @typescript-eslint/no-explicit-any */
   return (
     <Dropzone {...dropzoneProps} className={className} isDragging={isDragging}>
       <ProgressPreviewRing
@@ -165,10 +166,10 @@ const ImageDropZone: FC<ImageDropZone> = ({ className, onChange, value }) => {
         color={Colors.DarkBlue}
         image={curStatus === 'UPLOADED' ? value || imageUrl : ''}
       />
-      <DragText>{(Status as any)[curStatus].DragText}</DragText>
+      <DragText>{Status[curStatus].DragText}</DragText>
       <OrText>- or -</OrText>
       <SelectFile onClick={handleOpenOrCancel}>
-        {(Status as any)[curStatus].SelectFile}
+        {Status[curStatus].SelectFile}
       </SelectFile>
       <ErrorText>{errorMessage}</ErrorText>
       <input
